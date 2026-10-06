@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import datetime
 
 import pandas as pd
 from flask import (
@@ -42,16 +42,17 @@ bp = Blueprint("hod", __name__, url_prefix="/hod")
 
 def _clean(v):
     return (v or "").strip()
-
-
+    
 def _parse_date(v):
     if not v:
         return None
 
     try:
-        return date.fromisoformat(v)
-    except:
+        return datetime.strptime(v, "%Y-%m-%d")
+    except (TypeError, ValueError):
         return None
+
+
 
 
 def filtered_forms(args):
@@ -1335,52 +1336,38 @@ def forms():
         ),
     )
 
-
 @bp.post("/forms/create")
 @role_required("hod")
 def create_form():
-    sid = _clean(
-        request.form.get("subject_id")
-    )
 
-    s = (
-        Subject.get(int(sid))
-        if sid.isdigit()
-        else None
-    )
+    sid = _clean(request.form.get("subject_id"))
+
+    s = Subject.get(int(sid)) if sid.isdigit() else None
 
     if not s:
         flash(
             "Select a subject to create a feedback form.",
-            "error",
+            "error"
         )
-
-        return redirect(
-            url_for("hod.forms")
-        )
+        return redirect(url_for("hod.forms"))
 
     year = (
-        _clean(
-            request.form.get("academic_year")
-        )
+        _clean(request.form.get("academic_year"))
         or s.academic_year
     )
 
-    if FeedbackForm.find_one(
-        {
-            "subject_id": s.id,
-            "academic_year": year,
-        }
-    ):
+    # Prevent duplicate feedback forms
+    if FeedbackForm.find_one({
+        "subject_id": s.id,
+        "academic_year": year
+    }):
         flash(
             "A feedback form already exists for that subject and academic year.",
-            "warning",
+            "warning"
         )
+        return redirect(url_for("hod.forms"))
 
-        return redirect(
-            url_for("hod.forms")
-        )
-
+    # Convert HTML date values into MongoDB-compatible datetime
     start = _parse_date(
         request.form.get("start_date")
     )
@@ -1391,29 +1378,31 @@ def create_form():
 
     status = request.form.get(
         "status",
-        "Draft",
+        "Draft"
     )
 
     if status not in {
         "Draft",
         "Active",
         "Closed",
-        "Archived",
+        "Archived"
     }:
         status = "Draft"
 
-    new(
+    form = new(
         FeedbackForm,
         subject_id=s.id,
         academic_year=year,
         start_date=start,
         end_date=end,
-        status=status,
-    ).save()
+        status=status
+    )
+
+    form.save()
 
     flash(
         "Feedback form created successfully.",
-        "success",
+        "success"
     )
 
     return redirect(
@@ -1421,9 +1410,11 @@ def create_form():
     )
 
 
+
 @bp.post("/forms/<int:form_id>/update")
 @role_required("hod")
 def update_form(form_id):
+
     f = FeedbackForm.get(form_id)
 
     if not f:
@@ -1431,19 +1422,20 @@ def update_form(form_id):
 
     status = request.form.get(
         "status",
-        "Draft",
+        "Draft"
     )
 
     if status not in {
         "Draft",
         "Active",
         "Closed",
-        "Archived",
+        "Archived"
     }:
         status = "Draft"
 
     f.status = status
 
+    # Convert HTML date values to datetime
     f.start_date = _parse_date(
         request.form.get("start_date")
     )
@@ -1456,118 +1448,12 @@ def update_form(form_id):
 
     flash(
         "Feedback form settings saved.",
-        "success",
+        "success"
     )
 
     return redirect(
         url_for("hod.forms")
     )
-
-
-@bp.get("/analytics")
-@role_required("hod")
-def analytics():
-    forms_list = filtered_forms(
-        request.args
-    )
-
-    responses = responses_for_forms(
-        forms_list
-    )
-
-    questions = active_questions()
-
-    qd = question_averages(
-        responses,
-        [
-            q
-            for q in questions
-            if not q.is_comment
-        ],
-    )
-
-    dist = rating_distribution(
-        responses
-    )
-
-    comments = comments_for_responses(
-        responses
-    )
-
-    summ = []
-
-    for f in forms_list:
-        rs = [
-            r
-            for r in responses
-            if r.feedback_form_id == f.id
-        ]
-
-        summ.append(
-            {
-                "subject": f.subject,
-                "form": f,
-                "responses": len(rs),
-                "average": average_rating(rs),
-            }
-        )
-
-    fl = Faculty.all(
-        {"status": "Active"},
-        [("name", 1)],
-    )
-
-    sl = Subject.all(
-        {"status": "Active"},
-        [("subject_name", 1)],
-    )
-
-    semesters = sorted(
-        {
-            s.semester
-            for s in Subject.all()
-        }
-    )
-
-    years = sorted(
-        {
-            f.academic_year
-            for f in FeedbackForm.all()
-        },
-        reverse=True,
-    )
-
-    return render_template(
-        "hod/analytics.html",
-        forms=forms_list,
-        responses=responses,
-        response_count=len(responses),
-        average=average_rating(responses),
-        completion=completion_for_forms(
-            forms_list
-        ),
-        question_data=qd,
-        distribution=dist,
-        comments=comments,
-        subject_summaries=summ,
-        faculty_list=fl,
-        subjects_list=sl,
-        semesters=semesters,
-        years=years,
-        filters=request.args,
-        chart_labels=[
-            "Very poor",
-            "Poor",
-            "Average",
-            "Good",
-            "Excellent",
-        ],
-        chart_values=[
-            dist[str(i)]
-            for i in range(1, 6)
-        ],
-    )
-
 
 @bp.get("/faculty-performance")
 @role_required("hod")
