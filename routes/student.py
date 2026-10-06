@@ -9,7 +9,7 @@ from models.core import (
     SubmissionTracking,
 )
 
-from routes.auth import role_required
+from auth import role_required
 from services import is_form_open
 
 
