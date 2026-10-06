@@ -46,10 +46,34 @@ class User(UserMixin, Base):
 
 class Student(Base):
     collection="students"
+
     @property
-    def user(self): return User.get(self.user_id)
+    def user(self):
+        return User.get(self.user_id)
+
     @property
-    def submissions(self): return RelationList(SubmissionTracking.all({"student_id":self.id}))
+    def submissions(self):
+        return RelationList(
+            SubmissionTracking.all({"student_id": self.id})
+        )
+
+    @property
+    def assigned_subject_ids(self):
+        return getattr(self, "subject_ids", []) or []
+
+    @property
+    def assigned_subjects(self):
+        ids = self.assigned_subject_ids
+        if not ids:
+            return RelationList()
+
+        return RelationList(
+            [
+                s for s in Subject.all({"status": "Active"})
+                if s.id in ids
+            ]
+        )
+
 
 class Faculty(Base):
     collection="faculty"
