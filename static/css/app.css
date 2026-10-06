@@ -710,3 +710,154 @@ small { font-size: 12px; }
   .form-subject-meta { font-size: 8px; }
   .stat-card { padding: 11px; }
 }
+/* =========================================================
+   STUDENT SUBJECT ASSIGNMENT
+   ========================================================= */
+
+.subject-assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.assignment-item {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease,
+        background 0.2s ease;
+    box-sizing: border-box;
+}
+
+.assignment-item:hover {
+    border-color: #c7d2fe;
+    background: #fafbff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+.assignment-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #4f46e5;
+}
+
+.assignment-subject-info {
+    min-width: 0;
+}
+
+.assignment-subject-info strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #111827;
+    font-weight: 700;
+}
+
+.assignment-subject-info .table-secondary {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.assignment-item .status-badge {
+    justify-self: end;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.subject-assignment-list
+.assignment-item:has(input[type="checkbox"]:checked) {
+    border-color: #a5b4fc;
+    background: #f8faff;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.08);
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #eef0f4;
+}
+
+.form-actions .btn {
+    min-height: 42px;
+}
+
+/* Assignment page intro */
+.page-intro-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.page-intro-row > div:first-child {
+    min-width: 0;
+}
+
+.page-intro-row h2 {
+    margin: 4px 0 8px;
+}
+
+.page-intro-row .muted {
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Better panel spacing */
+.panel .panel-heading {
+    margin-bottom: 8px;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+
+    .page-intro-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .page-intro-row .btn {
+        width: 100%;
+    }
+
+    .assignment-item {
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .assignment-item .status-badge {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: -4px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
