@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% set page_heading = "Assign Subjects" %}
+{% set page_eyebrow = "DEPARTMENT / STUDENTS" %}
+
+{% block title %}Assign Subjects · DeptFeedback{% endblock %}
+
+{% block content %}
+
+<section class="page-intro-row">
+    <div>
+        <div class="section-kicker">SUBJECT ASSIGNMENT</div>
+
+        <h2>Assign subjects to {{ student.name }}</h2>
+
+        <p class="muted">
+            {{ student.enrollment_no }}
+            · Semester {{ student.semester }}
+            · {{ student.academic_year }}
+            · {{ student.department }}
+        </p>
+    </div>
+
+    <a class="btn btn-secondary" href="{{ url_for('hod.students') }}">
+        ← Back to Students
+    </a>
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-heading">
+        <div>
+            <div class="section-kicker">AVAILABLE SUBJECTS</div>
+
+            <h2>Select subjects</h2>
+
+            <p class="muted">
+                Select the subjects this student is allowed to submit feedback for.
+            </p>
+        </div>
+    </div>
+
+
+    {% if subjects %}
+
+    <form method="post">
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+
+        <div class="subject-assignment-list">
+
+            {% for subject in subjects %}
+
+            <label class="assignment-item">
+
+                <input
+                    type="checkbox"
+                    name="subject_ids"
+                    value="{{ subject.id }}"
+                    {% if subject.id in assigned_ids %}checked{% endif %}
+                >
+
+                <div class="assignment-subject-info">
+
+                    <strong>
+                        {{ subject.subject_name }}
+                    </strong>
+
+                    <div class="table-secondary">
+
+                        {{ subject.subject_code }}
+
+                        {% if subject.credits %}
+                            · {{ subject.credits }} Credits
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <span class="status-badge status-success">
+
+                    {% if subject.faculty %}
+                        {{ subject.faculty.name }}
+                    {% else %}
+                        Faculty not assigned
+                    {% endif %}
+
+                </span>
+
+            </label>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a
+                class="btn btn-secondary"
+                href="{{ url_for('hod.students') }}"
+            >
+                Cancel
+            </a>
+
+            <button
+                class="btn btn-primary"
+                type="submit"
+            >
+                Save Subject Assignment →
+            </button>
+
+        </div>
+
+    </form>
+
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <div class="empty-icon">📚</div>
+
+        <h3>No subjects available</h3>
+
+        <p>
+            No active subjects were found for this student's
+            semester, academic year and department.
+        </p>
+
+        <a
+            class="btn btn-primary"
+            href="{{ url_for('hod.subject_list') }}"
+        >
+            Manage Subjects →
+        </a>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}
