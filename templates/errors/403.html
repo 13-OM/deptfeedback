@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% set page_heading = "Access denied" %}
+{% set page_eyebrow = "PERMISSION CHECK" %}
+{% block title %}403 · Access denied{% endblock %}
+{% block content %}<section class="error-card panel"><div class="error-code">403</div><div class="section-kicker">THIS AREA IS RESTRICTED</div><h2>Access denied</h2><p>You don’t have permission to view this page. Access is checked on the server for every protected route.</p><div class="error-actions"><a class="btn btn-primary" href="{{ url_for('auth.home') }}">Return to dashboard <span>→</span></a><a class="text-link" href="{{ url_for('auth.profile') }}">Check your account</a></div></section>{% endblock %}

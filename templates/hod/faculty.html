@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% set page_heading = "Faculty management" %}
+{% set page_eyebrow = "DEPARTMENT / FACULTY" %}
+{% block title %}Faculty · DeptFeedback{% endblock %}
+{% block content %}
+<section class="page-intro-row"><div><div class="section-kicker">FACULTY DIRECTORY</div><h2>Manage faculty</h2><p class="muted">Create faculty accounts, maintain profiles and assign courses from the subject directory.</p></div><span class="count-chip">{{ faculty|length }} records</span></section>
+<section class="panel add-record-panel"><div class="tool-heading"><span class="tool-icon icon-indigo">＋</span><div><h3>Add a faculty member</h3><p>New accounts receive access only to subjects assigned to them.</p></div></div>
+<form method="post" action="{{ url_for('hod.add_faculty') }}" class="form-grid faculty-create-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="field"><span>Faculty name *</span><input name="name" required placeholder="Prof. Example"></label>
+  <label class="field"><span>Faculty ID *</span><input name="faculty_code" required placeholder="CE-F003"></label>
+  <label class="field"><span>Email *</span><input name="email" type="email" required placeholder="faculty@college.edu"></label>
+  <label class="field"><span>Login username *</span><input name="username" required placeholder="faculty3"></label>
+  <label class="field"><span>Designation</span><input name="designation" value="Assistant Professor"></label>
+  <label class="field"><span>Department</span><input name="department" value="{{ department_name }}"></label>
+  <label class="field"><span>Initial password</span><input name="password" minlength="6" placeholder="Defaults to faculty123"></label>
+  <div class="form-actions"><button class="btn btn-primary" type="submit">Create faculty account <span>→</span></button></div>
+</form></section>
+<section class="panel"><div class="panel-heading"><div><div class="section-kicker">PEOPLE</div><h2>Faculty directory</h2></div><form class="table-filter-form" method="get"><label class="search-field"><span>⌕</span><input name="q" value="{{ request.args.get('q','') }}" placeholder="Search faculty"></label><button class="btn btn-secondary btn-sm" type="submit">Search</button></form></div>
+{% if faculty %}<div class="table-wrap"><table class="data-table management-table"><thead><tr><th>Faculty member</th><th>Faculty ID</th><th>Designation</th><th>Subjects</th><th>Status</th><th></th></tr></thead><tbody>
+{% for member in faculty %}<tr><td><div class="faculty-cell"><span class="avatar avatar-tiny avatar-teal">{{ member.name[0]|upper }}</span><div><div class="table-primary">{{ member.name }}</div><div class="table-secondary">{{ member.email }}</div></div></div></td><td><span class="code-chip">{{ member.faculty_code }}</span></td><td>{{ member.designation }}</td><td>{{ member.subjects.count() }}</td><td><span class="status-badge {{ 'status-success' if member.status == 'Active' else 'status-neutral' }}"><span class="status-dot"></span>{{ member.status }}</span></td>
+<td class="align-right"><details class="edit-details"><summary class="table-action">Edit <span>⌄</span></summary><div class="edit-popover"><form method="post" action="{{ url_for('hod.edit_faculty', faculty_id=member.id) }}" class="form-grid compact-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="field"><span>Name</span><input name="name" value="{{ member.name }}" required></label><label class="field"><span>Faculty ID</span><input name="faculty_code" value="{{ member.faculty_code }}" required></label><label class="field"><span>Username</span><input name="username" value="{{ member.user.username }}" required></label><label class="field"><span>Email</span><input name="email" value="{{ member.email }}" type="email" required></label><label class="field"><span>Designation</span><input name="designation" value="{{ member.designation }}"></label><label class="field"><span>Department</span><input name="department" value="{{ member.department }}"></label><label class="field"><span>Status</span><select name="status"><option {{ 'selected' if member.status == 'Active' else '' }}>Active</option><option {{ 'selected' if member.status != 'Active' else '' }}>Inactive</option></select></label><div class="form-actions"><button class="btn btn-primary btn-sm" type="submit">Save changes</button></div></form></div></details></td></tr>{% endfor %}
+</tbody></table></div>{% else %}<div class="empty-state"><div class="empty-icon">♧</div><h3>No faculty members found</h3><p>Add a faculty account to begin assigning subjects.</p></div>{% endif %}</section>
+{% endblock %}

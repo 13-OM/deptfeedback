@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set page_heading = "Subject insights" %}
+{% set page_eyebrow = "MY SUBJECTS / ANALYTICS" %}
+{% block title %}{{ subject.subject_name }} insights · DeptFeedback{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('faculty.dashboard') }}"><span>←</span> Back to my subjects</a>
+<section class="detail-hero panel">
+  <div class="detail-subject-icon">{{ subject.subject_name[:1] }}</div>
+  <div class="detail-title-wrap"><div class="section-kicker">SUBJECT FEEDBACK</div><h2>{{ subject.subject_name }}</h2><div class="detail-meta"><span class="code-chip">{{ subject.subject_code }}</span><span>Semester {{ subject.semester }}</span><span>{{ form.academic_year if form else subject.academic_year }}</span><span>{{ subject.subject_type }}</span></div></div>
+  <div class="detail-actions"><a class="btn btn-secondary" href="{{ url_for('reports.export_excel', subject=subject.id) }}"><span class="btn-icon">⇩</span> Export subject</a></div>
+</section>
+<section class="stat-grid compact-stats">
+  <article class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">{{ response_count }}</div><div class="stat-foot">Anonymous submissions</div></article>
+  <article class="stat-card"><div class="stat-label">Average rating</div><div class="stat-value">{{ '%.2f'|format(average) }}<small>/5</small></div><div class="stat-foot">Across rated questions</div></article>
+  <article class="stat-card"><div class="stat-label">Eligible students</div><div class="stat-value">{{ completion.eligible }}</div><div class="stat-foot">Matching active cohort</div></article>
+  <article class="stat-card"><div class="stat-label">Completion rate</div><div class="stat-value">{{ completion.rate }}<small>%</small></div><div class="mini-progress"><span style="width: {{ completion.rate }}%"></span></div></article>
+</section>
+<div class="two-column-grid">
+  <section class="panel chart-panel">
+    <div class="panel-heading"><div><div class="section-kicker">RESPONSE PATTERN</div><h2>Rating distribution</h2><p class="muted">Frequency across all submitted question ratings.</p></div><span class="chart-legend"><i></i> Ratings</span></div>
+    <div class="chart-wrap"><canvas data-chart="bar" data-chart-labels='{{ chart_labels|tojson|forceescape }}' data-chart-values='{{ chart_values|tojson|forceescape }}' aria-label="Rating distribution chart"></canvas></div>
+  </section>
+  <section class="panel insight-panel">
+    <div class="panel-heading"><div><div class="section-kicker">TEACHING & COURSE</div><h2>Question averages</h2></div></div>
+    <div class="question-average-list">
+      {% for row in question_data %}<div class="question-average-row"><div class="question-average-copy"><span class="category-tag">{{ row.category }}</span><p>{{ row.question }}</p></div><div class="average-score"><strong>{{ '%.2f'|format(row.average) if row.average is not none else '—' }}</strong><span>/ 5</span></div></div>{% endfor %}
+    </div>
+  </section>
+</div>
+<section class="panel comments-panel">
+  <div class="panel-heading"><div><div class="section-kicker">STUDENT VOICES</div><h2>Anonymous comments</h2><p class="muted">Comments are shown without any student identifiers.</p></div><a class="text-link" href="{{ url_for('faculty.comments') }}">All my comments <span>→</span></a></div>
+  {% if comments %}<div class="comment-grid">{% for entry in comments[:6] %}<article class="comment-card"><div class="quote-mark">“</div><p>{{ entry.comment }}</p><div class="comment-meta"><span class="anonymous-avatar">◌</span><span>Anonymous response</span><span class="meta-separator">·</span><span>{{ subject.subject_code }}</span></div></article>{% endfor %}</div>
+  {% else %}<div class="empty-inline"><span>☷</span><div><strong>No comments yet</strong><p>Optional student suggestions will appear here once submitted.</p></div></div>{% endif %}
+</section>
+{% endblock %}

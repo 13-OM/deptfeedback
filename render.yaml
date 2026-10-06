@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: deptfeedback
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: deptfeedback
+      - key: DEPARTMENT_NAME
+        value: Computer Engineering
+      - key: SEED_DEMO
+        value: "true"
+      - key: SESSION_COOKIE_SECURE
+        value: "true"

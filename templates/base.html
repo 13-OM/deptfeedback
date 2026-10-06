@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>{% block title %}{{ page_title|default('DeptFeedback') }} · DeptFeedback{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar">
+    <div class="sidebar-brand">
+      <a class="brand-lockup" href="{{ url_for('auth.home') }}" aria-label="DeptFeedback home">
+        <span class="brand-mark">D<span>F</span></span>
+        <span class="brand-copy"><strong>DeptFeedback</strong><small>{{ department_name }}</small></span>
+      </a>
+      <button class="icon-btn sidebar-close" type="button" data-sidebar-close aria-label="Close navigation">×</button>
+    </div>
+    <div class="sidebar-section-label">WORKSPACE</div>
+    <nav class="side-nav" aria-label="Main navigation">
+      {% if current_user.is_authenticated and current_user.role == 'student' %}
+        <a class="nav-link {{ 'active' if request.path.startswith('/student/dashboard') else '' }}" href="{{ url_for('student.dashboard') }}"><span class="nav-icon">◫</span><span>Dashboard</span></a>
+        <a class="nav-link" href="{{ url_for('student.dashboard') }}#subjects"><span class="nav-icon">▤</span><span>My subjects</span></a>
+        <a class="nav-link" href="{{ url_for('student.dashboard') }}#pending"><span class="nav-icon">◷</span><span>Pending feedback</span></a>
+        <a class="nav-link" href="{{ url_for('student.dashboard') }}#completed"><span class="nav-icon">✓</span><span>Completed</span></a>
+        <a class="nav-link {{ 'active' if request.path == '/profile' else '' }}" href="{{ url_for('auth.profile') }}"><span class="nav-icon">◉</span><span>My profile</span></a>
+      {% elif current_user.is_authenticated and current_user.role == 'faculty' %}
+        <a class="nav-link {{ 'active' if request.path == '/faculty/dashboard' else '' }}" href="{{ url_for('faculty.dashboard') }}"><span class="nav-icon">◫</span><span>Dashboard</span></a>
+        <a class="nav-link {{ 'active' if request.path == '/faculty/subjects' or request.path.startswith('/faculty/subject/') else '' }}" href="{{ url_for('faculty.subjects') }}"><span class="nav-icon">▤</span><span>My subjects</span></a>
+        <a class="nav-link" href="{{ url_for('faculty.dashboard') }}#analytics"><span class="nav-icon">▥</span><span>Feedback analytics</span></a>
+        <a class="nav-link {{ 'active' if request.path == '/faculty/comments' else '' }}" href="{{ url_for('faculty.comments') }}"><span class="nav-icon">☷</span><span>Anonymous comments</span></a>
+        <a class="nav-link" href="{{ url_for('reports.export_excel') }}"><span class="nav-icon">⇩</span><span>Reports</span></a>
+        <a class="nav-link {{ 'active' if request.path == '/profile' else '' }}" href="{{ url_for('auth.profile') }}"><span class="nav-icon">◉</span><span>My profile</span></a>
+      {% elif current_user.is_authenticated and current_user.role == 'hod' %}
+        <a class="nav-link {{ 'active' if request.path == '/hod/dashboard' else '' }}" href="{{ url_for('hod.dashboard') }}"><span class="nav-icon">◫</span><span>Overview</span></a>
+        <div class="nav-group-label">DEPARTMENT</div>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/students') else '' }}" href="{{ url_for('hod.students') }}"><span class="nav-icon">♙</span><span>Students</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/faculty') else '' }}" href="{{ url_for('hod.faculty_list') }}"><span class="nav-icon">♧</span><span>Faculty</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/subjects') else '' }}" href="{{ url_for('hod.subject_list') }}"><span class="nav-icon">▤</span><span>Subjects</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/forms') else '' }}" href="{{ url_for('hod.forms') }}"><span class="nav-icon">◷</span><span>Feedback forms</span></a>
+        <div class="nav-group-label">INSIGHTS</div>
+        <a class="nav-link {{ 'active' if request.path == '/hod/analytics' else '' }}" href="{{ url_for('hod.analytics') }}"><span class="nav-icon">▥</span><span>Feedback analytics</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/faculty-performance') else '' }}" href="{{ url_for('hod.faculty_performance') }}"><span class="nav-icon">↗</span><span>Faculty performance</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/subject-performance') else '' }}" href="{{ url_for('hod.subject_performance') }}"><span class="nav-icon">◈</span><span>Subject performance</span></a>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/reports') else '' }}" href="{{ url_for('hod.reports') }}"><span class="nav-icon">⇩</span><span>Reports & exports</span></a>
+        <div class="nav-group-label">CONFIGURATION</div>
+        <a class="nav-link {{ 'active' if request.path.startswith('/hod/questions') else '' }}" href="{{ url_for('hod.questions') }}"><span class="nav-icon">⚙</span><span>Question bank</span></a>
+        <a class="nav-link {{ 'active' if request.path == '/profile' else '' }}" href="{{ url_for('auth.profile') }}"><span class="nav-icon">◉</span><span>My profile</span></a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-note">
+      <span class="note-icon">✦</span>
+      <div><strong>Feedback that moves us forward</strong><small>Student voices. Better learning.</small></div>
+    </div>
+    <div class="sidebar-user">
+      <span class="avatar avatar-small">{{ (current_user.username[0] if current_user.is_authenticated else 'D')|upper }}</span>
+      <div class="sidebar-user-copy"><strong>{{ current_user.username if current_user.is_authenticated else 'DeptFeedback' }}</strong><small>{{ current_user.role|title if current_user.is_authenticated else 'Portal' }}</small></div>
+      {% if current_user.is_authenticated %}
+      <form action="{{ url_for('auth.logout') }}" method="post" class="logout-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="icon-btn logout-btn" type="submit" title="Sign out" aria-label="Sign out">↪</button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+  <div class="sidebar-scrim" data-sidebar-close></div>
+  <main class="main-area">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn menu-toggle" type="button" data-sidebar-toggle aria-label="Open navigation">☰</button>
+        <div>
+          <div class="eyebrow">{{ page_eyebrow|default('DEPARTMENT PORTAL') }}</div>
+          <h1 class="topbar-title">{{ page_heading|default('Workspace') }}</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="today-chip"><span class="live-dot"></span><span>Academic year {{ current_user.student.academic_year if current_user.is_authenticated and current_user.role == 'student' else '2026–27' }}</span></div>
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch theme" title="Toggle dark mode"><span class="sun-icon">☼</span></button>
+        <div class="top-user"><span class="avatar">{{ (current_user.username[0] if current_user.is_authenticated else 'D')|upper }}</span></div>
+      </div>
+    </header>
+    <section class="page-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}<div class="toast-stack" aria-live="polite">{% for category, message in messages %}<div class="toast toast-{{ category }}"><span class="toast-mark">{{ '✓' if category == 'success' else '!' }}</span><span>{{ message }}</span><button type="button" class="toast-close" aria-label="Dismiss">×</button></div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </section>
+    <footer class="app-footer"><span>DeptFeedback <span class="footer-dot">·</span> {{ department_name }}</span><span>Built for better learning outcomes</span></footer>
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

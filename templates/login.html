@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Sign in · DeptFeedback</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body class="login-body">
+<main class="login-layout">
+  <section class="login-visual">
+    <div class="login-visual-inner">
+      <a class="brand-lockup login-brand" href="{{ url_for('auth.login') }}"><span class="brand-mark">D<span>F</span></span><span class="brand-copy"><strong>DeptFeedback</strong><small>{{ department_name }}</small></span></a>
+      <div class="login-hero-copy"><div class="banner-kicker"><span class="banner-kicker-dot"></span> THE DEPARTMENT FEEDBACK PORTAL</div><h1>Better feedback.<br><em>Better learning.</em></h1><p>A private, considered space for students to share their experience — and for educators to act on what matters.</p></div>
+      <div class="login-visual-art" aria-hidden="true"><div class="visual-orbit orbit-large"></div><div class="visual-orbit orbit-medium"></div><div class="visual-orbit orbit-small"></div><div class="visual-core">✦</div><span class="visual-point point-one"></span><span class="visual-point point-two"></span><div class="visual-card visual-card-one"><span class="visual-card-icon">↗</span><div><strong>4.32 / 5</strong><small>Learning experience</small></div></div><div class="visual-card visual-card-two"><span class="visual-bars"><i></i><i></i><i></i><i></i></span><div><strong>Student voice</strong><small>Always anonymous</small></div></div></div>
+      <div class="login-visual-foot"><span>● &nbsp;Secure role-based access</span><span>● &nbsp;Anonymous by design</span><span>● &nbsp;Built for {{ department_name }}</span></div>
+    </div>
+  </section>
+  <section class="login-panel">
+    <div class="login-panel-top"><span>Already part of the department?</span><button class="icon-btn theme-toggle" type="button" data-theme-toggle title="Toggle dark mode" aria-label="Toggle dark mode">☼</button></div>
+    <div class="login-card-wrap">
+      <div class="login-mobile-brand"><span class="brand-mark">D<span>F</span></span><strong>DeptFeedback</strong></div>
+      <div class="login-heading"><div class="section-kicker">WELCOME BACK</div><h2>Sign in to continue</h2><p>Choose your account type and enter your credentials.</p></div>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="login-flashes">{% for category, message in messages %}<div class="toast toast-{{ category }}"><span class="toast-mark">{{ '✓' if category == 'success' else '!' }}</span><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}{% endwith %}
+      <form method="post" class="login-form" data-login-form>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="role" value="{{ selected_role }}" data-role-input>
+        <div class="role-selector" role="tablist" aria-label="Account type">
+          <button type="button" class="role-option {{ 'active' if selected_role == 'student' else '' }}" data-role="student" role="tab" aria-selected="{{ 'true' if selected_role == 'student' else 'false' }}"><span class="role-option-icon">♙</span><span>Student</span></button>
+          <button type="button" class="role-option {{ 'active' if selected_role == 'faculty' else '' }}" data-role="faculty" role="tab" aria-selected="{{ 'true' if selected_role == 'faculty' else 'false' }}"><span class="role-option-icon">♧</span><span>Faculty</span></button>
+          <button type="button" class="role-option {{ 'active' if selected_role == 'hod' else '' }}" data-role="hod" role="tab" aria-selected="{{ 'true' if selected_role == 'hod' else 'false' }}"><span class="role-option-icon">⌂</span><span>HOD</span></button>
+        </div>
+        <label class="field login-field"><span data-login-label>Enrollment number</span><div class="input-with-icon"><span>◎</span><input type="text" name="username" data-username-input autocomplete="username" placeholder="e.g. 250183107002" required value="{{ request.form.get('username','') }}"></div></label>
+        <label class="field login-field"><span>Password / PIN</span><div class="input-with-icon"><span>⌑</span><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required><button class="password-toggle" type="button" data-password-toggle aria-label="Show password">◉</button></div></label>
+        <div class="login-row"><label class="check-field remember-field"><input type="checkbox" name="remember" disabled><span>Secure sign-in</span></label><span class="muted-small">Protected session</span></div>
+        <button class="btn btn-primary btn-lg login-submit" type="submit">Sign in securely <span>→</span></button>
+        <div class="login-divider"><span>DEVELOPMENT DEMO ACCOUNTS</span></div>
+        <div class="demo-accounts">
+          <button type="button" class="demo-account" data-demo-role="student" data-demo-username="250183107002" data-demo-password="student123"><span class="demo-avatar demo-student">S</span><span><strong>Student</strong><small>250183107002</small></span><b>↗</b></button>
+          <button type="button" class="demo-account" data-demo-role="faculty" data-demo-username="faculty1" data-demo-password="faculty123"><span class="demo-avatar demo-faculty">F</span><span><strong>Faculty</strong><small>faculty1</small></span><b>↗</b></button>
+          <button type="button" class="demo-account" data-demo-role="hod" data-demo-username="hod" data-demo-password="hod123"><span class="demo-avatar demo-hod">H</span><span><strong>HOD</strong><small>hod</small></span><b>↗</b></button>
+        </div>
+        <p class="demo-warning">Demo credentials are for local academic demonstration only. Change passwords and <code>SECRET_KEY</code> before any real deployment.</p>
+      </form>
+    </div>
+    <footer class="login-footer"><span>DeptFeedback · {{ department_name }}</span><span>© 2026 Department portal</span></footer>
+  </section>
+</main>
+</body>
+</html>

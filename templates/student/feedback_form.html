@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set page_heading = "End semester feedback" %}
+{% set page_eyebrow = "ANONYMOUS COURSE REVIEW" %}
+{% block title %}Feedback · {{ form.subject.subject_name }} · DeptFeedback{% endblock %}
+{% block content %}
+<div class="content-narrow">
+  <a class="back-link" href="{{ url_for('student.dashboard') }}"><span>←</span> Back to my subjects</a>
+  <section class="form-subject-card">
+    <div class="subject-mark">{{ form.subject.subject_name[:1] }}</div>
+    <div class="form-subject-main"><div class="section-kicker">END SEMESTER FEEDBACK</div><h2>{{ form.subject.subject_name }}</h2><div class="form-subject-meta"><span class="code-chip">{{ form.subject.subject_code }}</span><span>Semester {{ form.subject.semester }}</span><span>{{ form.academic_year }}</span></div></div>
+    <div class="form-subject-faculty"><span class="avatar">{{ (form.subject.faculty.name[0] if form.subject.faculty else '—')|upper }}</span><div><small>Faculty</small><strong>{{ form.subject.faculty.name if form.subject.faculty else 'Not assigned' }}</strong></div></div>
+  </section>
+  <div class="privacy-callout"><span class="privacy-icon">⌑</span><p><strong>Anonymous Feedback:</strong> Your enrollment number is used only to verify eligibility and prevent duplicate submissions. Your individual feedback response is stored anonymously and is not associated with your enrollment number in feedback reports.</p></div>
+  <form class="feedback-form panel" method="post" data-feedback-form data-question-count="{{ questions|length }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-intro"><div><div class="section-kicker">YOUR RESPONSE</div><h2>Rate your experience</h2><p class="muted">Choose one rating for each statement. Your honest input helps us improve.</p></div><div class="scale-legend"><span>1 = Very poor</span><span>5 = Excellent</span></div></div>
+    <div class="form-progress-row"><div class="form-progress-copy"><strong><span data-answered-count>0</span> of {{ questions|length }} rated</strong><span class="muted-small">Please answer every question</span></div><div class="form-progress-track"><span data-progress-bar></span></div></div>
+    <div class="question-list">
+      {% for question in questions %}
+      <fieldset class="question-card" data-question>
+        <legend><span class="question-index">{{ loop.index }}</span><span class="question-text">{{ question.question_text }}</span></legend>
+        <div class="rating-options">
+          {% for rating, caption in [(1, 'Very poor'), (2, 'Poor'), (3, 'Average'), (4, 'Good'), (5, 'Excellent')] %}
+          <label class="rating-choice {{ 'selected' if submitted.get('rating_' ~ question.id, '') == rating|string else '' }}">
+            <input type="radio" name="rating_{{ question.id }}" value="{{ rating }}" required {{ 'checked' if submitted.get('rating_' ~ question.id, '') == rating|string else '' }}>
+            <span class="rating-number">{{ rating }}</span><span class="rating-caption">{{ caption }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endfor %}
+    </div>
+    {% if comment_question %}<div class="comment-block">
+      <label for="comment"><span class="comment-label">{{ comment_question.question_text }}</span><span class="optional-tag">OPTIONAL</span></label>
+      <textarea id="comment" name="comment" rows="4" maxlength="2000" placeholder="What is working well? What could make this subject even better?">{{ submitted.get('comment', '') }}</textarea>
+      <div class="input-hint">Please keep comments constructive and respectful. Do not include your name or enrollment number.</div>
+    </div>{% endif %}
+    <div class="form-submit-row"><div class="submit-note"><span>🔒</span><span>Once submitted, your ratings cannot be changed.</span></div><button class="btn btn-primary btn-lg" type="submit">Submit anonymously <span>→</span></button></div>
+  </form>
+</div>
+{% endblock %}

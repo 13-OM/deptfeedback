@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% set page_heading = "Feedback received" %}
+{% set page_eyebrow = "THANK YOU" %}
+{% block title %}Feedback submitted · DeptFeedback{% endblock %}
+{% block content %}
+<div class="success-wrap">
+  <section class="success-card panel">
+    <div class="success-orb"><span>✓</span><i></i></div>
+    <div class="section-kicker">YOUR VOICE MAKES A DIFFERENCE</div>
+    <h2>Feedback submitted successfully</h2>
+    <p>Thank you for helping improve the department. Your response has been recorded anonymously.</p>
+    {% if reference %}<div class="reference-box"><span>Feedback reference</span><strong>{{ reference }}</strong></div>{% endif %}
+    <div class="success-privacy"><span>⌑</span><span>Your response is not associated with your enrollment number in feedback reports.</span></div>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('student.dashboard') }}">Back to dashboard <span>→</span></a>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% set page_heading = "Anonymous comments" %}
+{% set page_eyebrow = "STUDENT VOICES" %}
+{% block title %}Anonymous comments · DeptFeedback{% endblock %}
+{% block content %}
+<section class="page-intro-row"><div><div class="section-kicker">YOUR SUBJECTS ONLY</div><h2>Comments & suggestions</h2><p class="muted">Optional comments are shown without student identity or a precise submission time.</p></div><a class="btn btn-secondary" href="{{ url_for('reports.export_excel') }}"><span class="btn-icon">⇩</span> Export report</a></section>
+<div class="comment-list">
+{% if comments %}{% for entry in comments %}<article class="comment-card comment-list-card"><div class="quote-mark">“</div><p>{{ entry.comment }}</p><div class="comment-meta"><span class="anonymous-avatar">◌</span><span>Anonymous response</span><span class="meta-separator">·</span><span>{{ entry.subject }}</span><span class="code-chip">{{ entry.subject_code }}</span></div></article>{% endfor %}
+{% else %}<section class="panel empty-state"><div class="empty-icon">☷</div><h3>No comments submitted</h3><p>When a student leaves an optional suggestion for one of your subjects, it will appear here.</p></section>{% endif %}
+</div>
+{% endblock %}

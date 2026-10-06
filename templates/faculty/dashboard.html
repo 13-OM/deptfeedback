@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set page_heading = "Faculty dashboard" %}
+{% set page_eyebrow = "FACULTY WORKSPACE" %}
+{% block title %}Faculty dashboard · DeptFeedback{% endblock %}
+{% block content %}
+<section class="welcome-banner faculty-banner">
+  <div class="welcome-copy">
+    <div class="banner-kicker"><span class="banner-kicker-dot"></span> COURSE INSIGHTS</div>
+    <h2>Good to see you, {{ faculty.name.split(' ')[-1] }}.</h2>
+    <p>Review private, aggregated feedback for the subjects assigned to you.</p>
+    <div class="banner-meta"><span>{{ faculty.designation }}</span><span class="meta-separator">·</span><span>{{ faculty.department }}</span><span class="meta-separator">·</span><span>{{ faculty.faculty_code }}</span></div>
+  </div>
+  <div class="banner-art faculty-art" aria-hidden="true"><div class="faculty-ring ring-a"></div><div class="faculty-ring ring-b"></div><div class="faculty-art-core">↗</div><span class="faculty-art-label">INSIGHT</span></div>
+</section>
+<section class="stat-grid faculty-stats">
+  <article class="stat-card"><div class="stat-icon icon-indigo">▤</div><div class="stat-label">My subjects</div><div class="stat-value">{{ subject_count }}</div><div class="stat-foot">Assigned to your account</div></article>
+  <article class="stat-card"><div class="stat-icon icon-teal">◉</div><div class="stat-label">Responses</div><div class="stat-value">{{ response_count }}</div><div class="stat-foot">Anonymous submissions</div></article>
+  <article class="stat-card"><div class="stat-icon icon-blue">✦</div><div class="stat-label">Average rating</div><div class="stat-value">{{ '%.2f'|format(average) }}<small>/5</small></div><div class="stat-foot">Across your subjects</div></article>
+  <article class="stat-card"><div class="stat-icon icon-amber">↗</div><div class="stat-label">Completion</div><div class="stat-value">{{ completion.rate }}<small>%</small></div><div class="mini-progress"><span style="width: {{ completion.rate }}%"></span></div></article>
+</section>
+<section class="panel" id="analytics">
+  <div class="panel-heading">
+    <div><div class="section-kicker">ASSIGNED COURSEWORK</div><h2>My subjects</h2><p class="muted">Your account can only access analytics for your assigned subjects.</p></div>
+    <a class="btn btn-secondary" href="{{ url_for('reports.export_excel') }}"><span class="btn-icon">⇩</span> Download my report</a>
+  </div>
+  {% if rows %}
+  <div class="table-wrap"><table class="data-table">
+    <thead><tr><th>Subject</th><th>Code</th><th>Semester</th><th>Academic year</th><th class="align-right">Responses</th><th class="align-right">Average</th><th class="align-right">Action</th></tr></thead>
+    <tbody>{% for row in rows %}<tr>
+      <td><div class="table-primary">{{ row.subject.subject_name }}</div><div class="table-secondary">{{ row.subject.subject_type }} · {{ row.subject.credits }} credits</div></td>
+      <td><span class="code-chip">{{ row.subject.subject_code }}</span></td>
+      <td>{{ row.subject.semester }}</td><td>{{ row.subject.academic_year }}</td>
+      <td class="align-right"><strong>{{ row.responses }}</strong></td>
+      <td class="align-right"><span class="rating-pill">★ {{ '%.2f'|format(row.average) }}</span></td>
+      <td class="align-right"><a class="table-action" href="{{ row.url }}">View insights <span>→</span></a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty-state"><div class="empty-icon">▤</div><h3>No subjects assigned yet</h3><p>When the department assigns you a subject, its response insights will appear here.</p></div>{% endif %}
+</section>
+<div class="notice-card"><span class="notice-icon">⌑</span><div><strong>Student privacy is built in</strong><p>You see aggregate ratings and optional anonymous comments only. No student names, enrollment numbers, or login details are available in this workspace.</p></div><a href="{{ url_for('faculty.comments') }}">View comments <span>→</span></a></div>
+{% endblock %}

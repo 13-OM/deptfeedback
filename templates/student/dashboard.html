@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% set page_heading = "Student dashboard" %}
+{% set page_eyebrow = "STUDENT WORKSPACE" %}
+{% block title %}Student dashboard · DeptFeedback{% endblock %}
+{% block content %}
+<section class="welcome-banner student-banner">
+  <div class="welcome-copy">
+    <div class="banner-kicker"><span class="banner-kicker-dot"></span> YOUR LEARNING VOICE MATTERS</div>
+    <h2>Welcome back, {{ student.name.split(' ')[0] }}.</h2>
+    <p>Share thoughtful feedback on your subjects and help shape a better learning experience.</p>
+    <div class="banner-meta"><span>Semester {{ student.semester }}</span><span class="meta-separator">·</span><span>{{ student.academic_year }}</span><span class="meta-separator">·</span><span>{{ student.department }}</span></div>
+  </div>
+  <div class="banner-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="banner-art-core">✦</div><span class="orbit-dot orbit-dot-one"></span><span class="orbit-dot orbit-dot-two"></span></div>
+</section>
+
+<section class="stat-grid student-stats" aria-label="Feedback progress">
+  <article class="stat-card"><div class="stat-icon icon-indigo">▤</div><div class="stat-label">My subjects</div><div class="stat-value">{{ total }}</div><div class="stat-foot">Assigned this semester</div></article>
+  <article class="stat-card"><div class="stat-icon icon-teal">✓</div><div class="stat-label">Completed</div><div class="stat-value">{{ completed }}</div><div class="stat-foot">Feedback submitted</div></article>
+  <article class="stat-card"><div class="stat-icon icon-amber">◷</div><div class="stat-label">Pending</div><div class="stat-value">{{ pending }}</div><div class="stat-foot">Ready for your input</div></article>
+  <article class="stat-card"><div class="stat-icon icon-blue">↗</div><div class="stat-label">Completion</div><div class="stat-value">{{ completion }}<small>%</small></div><div class="mini-progress"><span style="width: {{ completion }}%"></span></div></article>
+</section>
+
+<section class="panel" id="subjects">
+  <div class="panel-heading">
+    <div><div class="section-kicker">YOUR COURSE LIST</div><h2>My subjects</h2><p class="muted">Feedback is private and never shown with your enrollment number.</p></div>
+    <div class="filter-pills"><button class="filter-pill active" type="button" data-row-filter="all">All <span>{{ total }}</span></button><button class="filter-pill" type="button" data-row-filter="Pending">Pending <span>{{ pending }}</span></button><button class="filter-pill" type="button" data-row-filter="Completed">Done <span>{{ completed }}</span></button></div>
+  </div>
+  {% if items %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Subject</th><th>Subject code</th><th>Faculty</th><th>Semester</th><th>Status</th><th class="align-right">Action</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+        <tr data-status-row="{{ item.state }}">
+          <td><div class="table-primary">{{ item.subject.subject_name }}</div><div class="table-secondary">{{ item.subject.subject_type }} · {{ item.form.academic_year }}</div></td>
+          <td><span class="code-chip">{{ item.subject.subject_code }}</span></td>
+          <td><div class="faculty-cell"><span class="avatar avatar-tiny">{{ (item.subject.faculty.name[0] if item.subject.faculty else '—')|upper }}</span><span>{{ item.subject.faculty.name if item.subject.faculty else 'Not assigned' }}</span></div></td>
+          <td>{{ item.subject.semester }}</td>
+          <td><span class="status-badge {{ 'status-success' if item.state == 'Completed' else 'status-pending' if item.state == 'Pending' else 'status-neutral' }}"><span class="status-dot"></span>{{ item.state }}</span></td>
+          <td class="align-right">{% if item.open %}<a class="btn btn-primary btn-sm" href="{{ url_for('student.feedback_form', form_id=item.form.id) }}">Give feedback <span>→</span></a>{% elif item.done %}<span class="completed-action">Completed <span>✓</span></span>{% else %}<span class="muted-small">Not available</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">▤</div><h3>No subjects found</h3><p>Your subject list will appear here once the department assigns your semester and academic year.</p></div>
+  {% endif %}
+</section>
+<section class="privacy-strip"><span class="privacy-icon">⌑</span><div><strong>Your feedback stays anonymous</strong><p>Enrollment is only used to confirm eligibility and prevent duplicate submissions. Responses are stored separately from your student account.</p></div><a href="{{ url_for('auth.profile') }}">View profile <span>→</span></a></section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% set page_heading = "Reports & exports" %}
+{% set page_eyebrow = "DEPARTMENT / REPORTS" %}
+{% block title %}Reports & exports · DeptFeedback{% endblock %}
+{% block content %}
+<section class="page-intro-row"><div><div class="section-kicker">OFFICIAL REPORTING</div><h2>Reports & exports</h2><p class="muted">Generate formatted Excel workbooks for department review, meetings and semester records.</p></div></section>
+<section class="export-feature panel"><div class="export-feature-copy"><div class="export-icon">XLSX</div><div><div class="section-kicker">ANONYMOUS DATASET</div><h2>Department feedback workbook</h2><p>Includes response-level anonymous ratings, subject and faculty summaries, question analysis and feedback statistics. No student names or enrollment numbers are included.</p><div class="export-tags"><span>5 formatted sheets</span><span>Filters & frozen headers</span><span>Private by design</span></div></div></div><a class="btn btn-primary btn-lg" href="{{ url_for('reports.export_excel') }}"><span class="btn-icon">⇩</span> Download all feedback</a></section>
+<div class="export-layout-grid">
+<section class="panel export-filter-card"><div class="tool-heading"><span class="tool-icon icon-indigo">⌕</span><div><h3>Need a specific slice?</h3><p>Choose a filter in analytics, then export the matching selection.</p></div></div><a class="btn btn-secondary" href="{{ url_for('hod.analytics') }}">Open filtered analytics <span>→</span></a></section>
+<section class="panel workbook-sheets"><div class="section-kicker">INSIDE THE WORKBOOK</div><h3>One workbook, five useful views</h3><div class="sheet-list"><div><span class="sheet-icon">01</span><span><strong>Feedback Responses</strong><small>Anonymous ratings, comments and time bucket</small></span></div><div><span class="sheet-icon">02</span><span><strong>Subject Summary</strong><small>Response count and average per offering</small></span></div><div><span class="sheet-icon">03</span><span><strong>Faculty Summary</strong><small>Departmental faculty comparison</small></span></div><div><span class="sheet-icon">04</span><span><strong>Question Analysis</strong><small>Average score for each question</small></span></div><div><span class="sheet-icon">05</span><span><strong>Feedback Statistics</strong><small>Eligibility, response count and completion</small></span></div></div></section>
+</div>
+<div class="privacy-strip"><span class="privacy-icon">⌑</span><div><strong>Privacy reminder</strong><p>Feedback response sheets intentionally omit student identifiers. Individual ratings are never joined to student roster data in exported reports.</p></div></div>
+{% endblock %}

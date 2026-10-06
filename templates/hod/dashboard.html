@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set page_heading = "Department overview" %}
+{% set page_eyebrow = "HOD CONTROL CENTER" %}
+{% block title %}Department overview · DeptFeedback{% endblock %}
+{% block content %}
+<section class="welcome-banner hod-banner">
+  <div class="welcome-copy">
+    <div class="banner-kicker"><span class="banner-kicker-dot"></span> DEPARTMENT PULSE</div>
+    <h2>Good morning, HOD.</h2>
+    <p>A clear view of feedback participation and learning quality across {{ department_name }}.</p>
+    <div class="banner-meta"><span>{{ response_count }} anonymous responses</span><span class="meta-separator">·</span><span>{{ completion.rate }}% completion</span><span class="meta-separator">·</span><span>AY 2026–27</span></div>
+  </div>
+  <div class="hod-banner-side"><div class="hod-score-ring"><div><strong>{{ '%.2f'|format(overall) }}</strong><span>out of 5</span></div></div><div class="hod-score-caption">Department rating</div></div>
+</section>
+<section class="stat-grid hod-stats">
+  <article class="stat-card"><div class="stat-icon icon-indigo">♙</div><div class="stat-label">Students</div><div class="stat-value">{{ student_count }}</div><div class="stat-foot">Active student accounts</div></article>
+  <article class="stat-card"><div class="stat-icon icon-teal">♧</div><div class="stat-label">Faculty</div><div class="stat-value">{{ faculty_count }}</div><div class="stat-foot">Active faculty members</div></article>
+  <article class="stat-card"><div class="stat-icon icon-blue">▤</div><div class="stat-label">Subjects</div><div class="stat-value">{{ subject_count }}</div><div class="stat-foot">Across active offerings</div></article>
+  <article class="stat-card"><div class="stat-icon icon-violet">◉</div><div class="stat-label">Responses</div><div class="stat-value">{{ response_count }}</div><div class="stat-foot">Stored anonymously</div></article>
+  <article class="stat-card"><div class="stat-icon icon-amber">✦</div><div class="stat-label">Department rating</div><div class="stat-value">{{ '%.2f'|format(overall) }}<small>/5</small></div><div class="stat-foot">All rated questions</div></article>
+  <article class="stat-card"><div class="stat-icon icon-rose">↗</div><div class="stat-label">Completion</div><div class="stat-value">{{ completion.rate }}<small>%</small></div><div class="mini-progress"><span style="width: {{ completion.rate }}%"></span></div></article>
+</section>
+<div class="two-column-grid dashboard-charts">
+  <section class="panel chart-panel">
+    <div class="panel-heading"><div><div class="section-kicker">FACULTY COMPARISON</div><h2>Average performance</h2><p class="muted">Aggregated feedback by faculty member.</p></div><a class="text-link" href="{{ url_for('hod.faculty_performance') }}">Full comparison <span>→</span></a></div>
+    {% if faculty_data %}<div class="chart-wrap"><canvas data-chart="bar" data-chart-labels='{{ chart_labels|tojson|forceescape }}' data-chart-values='{{ chart_values|tojson|forceescape }}' data-chart-max="5" aria-label="Faculty performance chart"></canvas></div>{% else %}<div class="empty-inline"><span>▥</span><div><strong>Analytics will appear here</strong><p>Feedback results will populate after responses are submitted.</p></div></div>{% endif %}
+  </section>
+  <section class="panel chart-panel">
+    <div class="panel-heading"><div><div class="section-kicker">SUBJECT COMPARISON</div><h2>Top subject ratings</h2><p class="muted">Leading subjects by average score.</p></div><a class="text-link" href="{{ url_for('hod.subject_performance') }}">View all <span>→</span></a></div>
+    {% if subject_data %}<div class="chart-wrap"><canvas data-chart="bar" data-chart-labels='{{ subject_labels|tojson|forceescape }}' data-chart-values='{{ subject_values|tojson|forceescape }}' data-chart-max="5" aria-label="Subject performance chart"></canvas></div>{% else %}<div class="empty-inline"><span>◈</span><div><strong>No rated subjects yet</strong><p>Subject averages will show after feedback is received.</p></div></div>{% endif %}
+  </section>
+</div>
+<section class="panel quick-actions-panel">
+  <div class="panel-heading"><div><div class="section-kicker">MANAGE THE CYCLE</div><h2>Quick actions</h2></div></div>
+  <div class="quick-action-grid">
+    <a class="quick-action" href="{{ url_for('hod.students') }}"><span class="quick-icon icon-indigo">♙</span><span><strong>Manage students</strong><small>Roster, search and bulk import</small></span><b>→</b></a>
+    <a class="quick-action" href="{{ url_for('hod.subject_list') }}"><span class="quick-icon icon-blue">▤</span><span><strong>Manage subjects</strong><small>Assign faculty and course details</small></span><b>→</b></a>
+    <a class="quick-action" href="{{ url_for('hod.forms') }}"><span class="quick-icon icon-teal">◷</span><span><strong>Feedback forms</strong><small>Open, close and archive surveys</small></span><b>→</b></a>
+    <a class="quick-action" href="{{ url_for('hod.analytics') }}"><span class="quick-icon icon-amber">▥</span><span><strong>Explore analytics</strong><small>Filter results and read comments</small></span><b>→</b></a>
+  </div>
+</section>
+{% endblock %}

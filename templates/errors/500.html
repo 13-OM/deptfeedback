@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% set page_heading = "Something went wrong" %}
+{% set page_eyebrow = "SERVER ERROR" %}
+{% block title %}500 · Server error{% endblock %}
+{% block content %}<section class="error-card panel"><div class="error-code">500</div><div class="section-kicker">PLEASE TRY AGAIN</div><h2>We couldn’t complete that request</h2><p>Your session is safe. Please return to the dashboard and try again. No technical details are exposed here.</p><div class="error-actions"><a class="btn btn-primary" href="{{ url_for('auth.home') }}">Return to dashboard <span>→</span></a></div></section>{% endblock %}
