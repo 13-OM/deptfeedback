@@ -8,10 +8,10 @@
 {% block content %}
 
 {# =========================================================
-   CALCULATE DASHBOARD COUNTS FROM THE ACTUAL ITEMS LIST
+   DASHBOARD COUNTS
    ========================================================= #}
 
-{% set total = items|length %}
+{% set total_forms = items|length %}
 
 {% set ns = namespace(
     completed=0,
@@ -19,20 +19,30 @@
 ) %}
 
 {% for item in items %}
+
     {% if item.state == "Completed" %}
+
         {% set ns.completed = ns.completed + 1 %}
+
     {% elif item.state == "Pending" %}
+
         {% set ns.pending = ns.pending + 1 %}
+
     {% endif %}
+
 {% endfor %}
 
 {% set completed = ns.completed %}
 {% set pending = ns.pending %}
 
-{% if total > 0 %}
-    {% set completion = ((completed / total) * 100)|round|int %}
+{% if total_forms > 0 %}
+
+    {% set completion = ((completed / total_forms) * 100)|round|int %}
+
 {% else %}
+
     {% set completion = 0 %}
+
 {% endif %}
 
 
@@ -50,7 +60,8 @@
         </div>
 
         <h2>
-            Welcome back, {{ student.name.split(' ')[0] }}.
+            Welcome back,
+            {{ student.name.split(' ')[0] }}.
         </h2>
 
         <p>
@@ -122,7 +133,7 @@
         </div>
 
         <div class="stat-value">
-            {{ total }}
+            {{ subject_count }}
         </div>
 
         <div class="stat-foot">
@@ -243,7 +254,7 @@
                 data-row-filter="all"
             >
                 All
-                <span>{{ total }}</span>
+                <span>{{ total_forms }}</span>
             </button>
 
 
@@ -272,7 +283,7 @@
 
 
     <!-- =====================================================
-         SUBJECTS EXIST
+         FEEDBACK FORMS EXIST
          ===================================================== -->
 
     {% if items %}
@@ -322,7 +333,9 @@
                     data-status-row="{{ item.state }}"
                 >
 
-                    <!-- SUBJECT -->
+                    <!-- =====================================
+                         SUBJECT
+                         ===================================== -->
 
                     <td>
 
@@ -345,7 +358,9 @@
                     </td>
 
 
-                    <!-- SUBJECT CODE -->
+                    <!-- =====================================
+                         SUBJECT CODE
+                         ===================================== -->
 
                     <td>
 
@@ -358,7 +373,9 @@
                     </td>
 
 
-                    <!-- FACULTY -->
+                    <!-- =====================================
+                         FACULTY
+                         ===================================== -->
 
                     <td>
 
@@ -392,7 +409,9 @@
                     </td>
 
 
-                    <!-- SEMESTER -->
+                    <!-- =====================================
+                         SEMESTER
+                         ===================================== -->
 
                     <td>
 
@@ -401,22 +420,22 @@
                     </td>
 
 
-                    <!-- STATUS -->
+                    <!-- =====================================
+                         STATUS
+                         ===================================== -->
 
                     <td>
 
                         <span
                             class="
                                 status-badge
-                                {{
-                                    'status-success'
-                                    if item.state == 'Completed'
-                                    else
-                                    'status-pending'
-                                    if item.state == 'Pending'
-                                    else
-                                    'status-neutral'
-                                }}
+                                {% if item.state == 'Completed' %}
+                                    status-success
+                                {% elif item.state == 'Pending' %}
+                                    status-pending
+                                {% else %}
+                                    status-neutral
+                                {% endif %}
                             "
                         >
 
@@ -429,17 +448,38 @@
                     </td>
 
 
-                    <!-- ACTION -->
+                    <!-- =====================================
+                         ACTION
+                         ===================================== -->
 
                     <td class="align-right">
 
-                        {% if item.open %}
+                        {# IMPORTANT:
+                           Completed must be checked FIRST.
+                           Otherwise an open form could show
+                           "Give feedback" even after submission.
+                        #}
+
+                        {% if item.done %}
+
+                            <span class="completed-action">
+
+                                Completed
+
+                                <span>
+                                    ✓
+                                </span>
+
+                            </span>
+
+
+                        {% elif item.open %}
 
                             <a
                                 class="btn btn-primary btn-sm"
                                 href="{{
                                     url_for(
-                                        'student.feedback_form',
+                                        'student.feedback',
                                         form_id=item.form.id
                                     )
                                 }}"
@@ -452,19 +492,6 @@
                                 </span>
 
                             </a>
-
-
-                        {% elif item.done %}
-
-                            <span class="completed-action">
-
-                                Completed
-
-                                <span>
-                                    ✓
-                                </span>
-
-                            </span>
 
 
                         {% else %}
@@ -486,6 +513,31 @@
             </tbody>
 
         </table>
+
+    </div>
+
+
+    <!-- =====================================================
+         NO FEEDBACK FORMS
+         ===================================================== -->
+
+    {% elif assigned_subjects %}
+
+    <div class="empty-state">
+
+        <div class="empty-icon">
+            ✓
+        </div>
+
+        <h3>
+            Subjects assigned successfully
+        </h3>
+
+        <p>
+            You have {{ subject_count }} assigned subject(s),
+            but there are currently no active feedback forms
+            available for them.
+        </p>
 
     </div>
 
@@ -554,5 +606,6 @@
     </a>
 
 </section>
+
 
 {% endblock %}
