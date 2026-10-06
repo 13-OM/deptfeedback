@@ -8,13 +8,44 @@ from mongo import get_db
 from services import is_form_open,student_is_eligible,tracked_submission
 bp=Blueprint("student",__name__,url_prefix="/student")
 def student_forms(student):
-    forms=[]
-    for f in FeedbackForm.all({"academic_year":student.academic_year},[("id",1)]):
-        s=f.subject
-        if s and s.semester==student.semester and s.status=="Active" and s.department.strip().casefold()==student.department.strip().casefold():forms.append(f)
-    return sorted(forms,key=lambda f:f.subject.subject_name)
-@bp.get("/dashboard")
-@role_required("student")
+    forms = []
+
+    assigned_ids = set(
+        getattr(student, "subject_ids", []) or []
+    )
+
+    for f in FeedbackForm.all(
+        {"academic_year": student.academic_year},
+        [("id", 1)]
+    ):
+        s = f.subject
+
+        if not s:
+            continue
+
+        # Student must be explicitly assigned this subject
+        if s.id not in assigned_ids:
+            continue
+
+        # Additional eligibility checks
+        if s.semester != student.semester:
+            continue
+
+        if s.status != "Active":
+            continue
+
+        if (
+            s.department.strip().casefold()
+            != student.department.strip().casefold()
+        ):
+            continue
+
+        forms.append(f)
+
+    return sorted(
+        forms,
+        key=lambda f: f.subject.subject_name
+    )
 def dashboard():
     student=current_user.student; forms=student_forms(student); items=[]; completed=pending=0
     for form in forms:
