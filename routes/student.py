@@ -1,4 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, abort, request
+from flask import (
+    Blueprint,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    abort,
+    request,
+)
+
 from flask_login import current_user
 
 from models.core import (
@@ -13,7 +22,11 @@ from routes.auth import role_required
 from services import is_form_open
 
 
-bp = Blueprint("student", __name__, url_prefix="/student")
+bp = Blueprint(
+    "student",
+    __name__,
+    url_prefix="/student"
+)
 
 
 # ============================================================
@@ -21,14 +34,19 @@ bp = Blueprint("student", __name__, url_prefix="/student")
 # ============================================================
 
 def get_current_student():
-    """Return the Student record linked to the logged-in user."""
+    """
+    Return the Student record linked to the logged-in user.
+    """
 
-    student = Student.first({
+    student = Student.find_one({
         "user_id": current_user.id
     })
 
     if not student:
-        abort(404, description="Student profile not found.")
+        abort(
+            404,
+            description="Student profile not found."
+        )
 
     return student
 
@@ -44,13 +62,19 @@ def student_assigned_subject_ids(student):
     Handles both integer and string IDs safely.
     """
 
-    raw_ids = getattr(student, "subject_ids", []) or []
+    raw_ids = getattr(
+        student,
+        "subject_ids",
+        []
+    ) or []
 
     result = set()
 
     for value in raw_ids:
+
         try:
             result.add(int(value))
+
         except (TypeError, ValueError):
             continue
 
@@ -66,11 +90,14 @@ def get_assigned_subjects(student):
     Return ONLY subjects assigned to this student.
 
     Assignment is based on student.subject_ids.
+
     Additional semester, academic year and department
     validation is applied.
     """
 
-    assigned_ids = student_assigned_subject_ids(student)
+    assigned_ids = student_assigned_subject_ids(
+        student
+    )
 
     if not assigned_ids:
         return []
@@ -83,12 +110,20 @@ def get_assigned_subjects(student):
 
     for subject in subjects:
 
+        # ----------------------------------------------------
+        # SUBJECT ID
+        # ----------------------------------------------------
+
         try:
             subject_id = int(subject.id)
+
         except (TypeError, ValueError):
             continue
 
-        # Subject must be explicitly assigned
+        # ----------------------------------------------------
+        # ASSIGNMENT CHECK
+        # ----------------------------------------------------
+
         if subject_id not in assigned_ids:
             continue
 
@@ -99,8 +134,12 @@ def get_assigned_subjects(student):
         if student.semester is not None:
 
             try:
-                if int(subject.semester) != int(student.semester):
+
+                if int(subject.semester) != int(
+                    student.semester
+                ):
                     continue
+
             except (TypeError, ValueError):
                 continue
 
@@ -153,7 +192,9 @@ def get_forms_for_student(student):
     assigned to this student.
     """
 
-    assigned_subjects = get_assigned_subjects(student)
+    assigned_subjects = get_assigned_subjects(
+        student
+    )
 
     if not assigned_subjects:
         return []
@@ -176,12 +217,20 @@ def get_forms_for_student(student):
         if not subject:
             continue
 
+        # ----------------------------------------------------
+        # SUBJECT ID
+        # ----------------------------------------------------
+
         try:
             subject_id = int(subject.id)
+
         except (TypeError, ValueError):
             continue
 
-        # Form must belong to assigned subject
+        # ----------------------------------------------------
+        # ASSIGNMENT CHECK
+        # ----------------------------------------------------
+
         if subject_id not in assigned_ids:
             continue
 
@@ -217,7 +266,7 @@ def has_submitted(student, form):
     this feedback form.
     """
 
-    tracking = SubmissionTracking.first({
+    tracking = SubmissionTracking.find_one({
         "student_id": student.id,
         "feedback_form_id": form.id,
     })
@@ -239,16 +288,20 @@ def dashboard():
     # GET ASSIGNED SUBJECTS
     # --------------------------------------------------------
 
-    assigned_subjects = get_assigned_subjects(student)
+    assigned_subjects = get_assigned_subjects(
+        student
+    )
 
     # --------------------------------------------------------
-    # GET ACTIVE FORMS
+    # GET ACTIVE FEEDBACK FORMS
     # --------------------------------------------------------
 
-    forms = get_forms_for_student(student)
+    forms = get_forms_for_student(
+        student
+    )
 
     # --------------------------------------------------------
-    # BUILD ITEMS FOR DASHBOARD
+    # BUILD DASHBOARD ITEMS
     # --------------------------------------------------------
 
     items = []
@@ -265,21 +318,41 @@ def dashboard():
             form
         )
 
+        # ----------------------------------------------------
+        # FORM OPEN STATUS
+        # ----------------------------------------------------
+
         open_status = False
 
         try:
-            open_status = is_form_open(form)
+
+            open_status = is_form_open(
+                form
+            )
+
         except Exception:
+
             open_status = False
 
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
+
         if submitted:
+
             state = "Completed"
 
         elif open_status:
+
             state = "Pending"
 
         else:
+
             state = "Not Available"
+
+        # ----------------------------------------------------
+        # DASHBOARD ITEM
+        # ----------------------------------------------------
 
         items.append({
             "form": form,
@@ -291,10 +364,7 @@ def dashboard():
         })
 
     # --------------------------------------------------------
-    # IMPORTANT
-    #
-    # The dashboard template uses "items".
-    # Calculate statistics from the SAME items list.
+    # STATISTICS
     # --------------------------------------------------------
 
     total = len(items)
@@ -312,10 +382,13 @@ def dashboard():
     )
 
     if total > 0:
+
         completion = round(
             (completed / total) * 100
         )
+
     else:
+
         completion = 0
 
     # --------------------------------------------------------
@@ -344,7 +417,9 @@ def dashboard():
         forms=forms,
         submitted_count=completed,
         pending_count=pending,
-        subject_count=len(assigned_subjects),
+        subject_count=len(
+            assigned_subjects
+        ),
     )
 
 
@@ -357,7 +432,9 @@ def dashboard():
 def subjects():
 
     return redirect(
-        url_for("student.dashboard")
+        url_for(
+            "student.dashboard"
+        )
     )
 
 
@@ -374,10 +451,20 @@ def feedback(form_id):
 
     student = get_current_student()
 
-    form = FeedbackForm.get(form_id)
+    # --------------------------------------------------------
+    # GET FEEDBACK FORM
+    # --------------------------------------------------------
+
+    form = FeedbackForm.get(
+        form_id
+    )
 
     if not form:
         abort(404)
+
+    # --------------------------------------------------------
+    # GET SUBJECT
+    # --------------------------------------------------------
 
     subject = form.subject
 
@@ -393,8 +480,13 @@ def feedback(form_id):
     )
 
     try:
-        subject_id = int(subject.id)
+
+        subject_id = int(
+            subject.id
+        )
+
     except (TypeError, ValueError):
+
         abort(404)
 
     if subject_id not in assigned_ids:
@@ -405,7 +497,9 @@ def feedback(form_id):
         )
 
         return redirect(
-            url_for("student.dashboard")
+            url_for(
+                "student.dashboard"
+            )
         )
 
     # --------------------------------------------------------
@@ -426,7 +520,9 @@ def feedback(form_id):
                 )
 
                 return redirect(
-                    url_for("student.dashboard")
+                    url_for(
+                        "student.dashboard"
+                    )
                 )
 
         except (TypeError, ValueError):
@@ -437,7 +533,36 @@ def feedback(form_id):
             )
 
             return redirect(
-                url_for("student.dashboard")
+                url_for(
+                    "student.dashboard"
+                )
+            )
+
+    # --------------------------------------------------------
+    # ACADEMIC YEAR CHECK
+    # --------------------------------------------------------
+
+    if student.academic_year:
+
+        student_year = str(
+            student.academic_year
+        ).strip()
+
+        subject_year = str(
+            subject.academic_year
+        ).strip()
+
+        if student_year != subject_year:
+
+            flash(
+                "This subject is not assigned to your academic year.",
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "student.dashboard"
+                )
             )
 
     # --------------------------------------------------------
@@ -462,14 +587,19 @@ def feedback(form_id):
             )
 
             return redirect(
-                url_for("student.dashboard")
+                url_for(
+                    "student.dashboard"
+                )
             )
 
     # --------------------------------------------------------
     # DUPLICATE SUBMISSION CHECK
     # --------------------------------------------------------
 
-    if has_submitted(student, form):
+    if has_submitted(
+        student,
+        form
+    ):
 
         flash(
             "You have already submitted feedback for this subject.",
@@ -477,7 +607,9 @@ def feedback(form_id):
         )
 
         return redirect(
-            url_for("student.dashboard")
+            url_for(
+                "student.dashboard"
+            )
         )
 
     # --------------------------------------------------------
@@ -492,7 +624,9 @@ def feedback(form_id):
         )
 
         return redirect(
-            url_for("student.dashboard")
+            url_for(
+                "student.dashboard"
+            )
         )
 
     # --------------------------------------------------------
@@ -536,7 +670,9 @@ def feedback(form_id):
 
             try:
 
-                rating = int(value)
+                rating = int(
+                    value
+                )
 
             except (TypeError, ValueError):
 
@@ -568,7 +704,9 @@ def feedback(form_id):
                     questions=questions,
                 )
 
-            ratings[question.id] = rating
+            ratings[
+                question.id
+            ] = rating
 
         # ----------------------------------------------------
         # COMMENT
@@ -600,7 +738,9 @@ def feedback(form_id):
 
             response.add_answer(
                 question_id=question.id,
-                rating=ratings[question.id],
+                rating=ratings[
+                    question.id
+                ],
                 comment=(
                     comment
                     if questions
@@ -653,13 +793,17 @@ def feedback(form_id):
 # SUCCESS PAGE
 # ============================================================
 
-@bp.get("/success/<int:form_id>")
+@bp.get(
+    "/success/<int:form_id>"
+)
 @role_required("student")
 def success(form_id):
 
     student = get_current_student()
 
-    form = FeedbackForm.get(form_id)
+    form = FeedbackForm.get(
+        form_id
+    )
 
     if not form:
         abort(404)
