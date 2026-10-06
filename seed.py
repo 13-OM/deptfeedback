@@ -1,4 +1,4 @@
-
+```python
 import random
 from datetime import datetime, timedelta
 
@@ -36,7 +36,10 @@ DEFAULT_QUESTIONS = [
 
 
 def user(username, role, password):
-    u = User.find_one({"username": username, "role": role})
+    u = User.find_one({
+        "username": username,
+        "role": role
+    })
 
     if u:
         return u
@@ -45,7 +48,7 @@ def user(username, role, password):
         User,
         username=username,
         role=role,
-        created_at=datetime.utcnow(),
+        created_at=datetime.utcnow()
     )
 
     u.set_password(password)
@@ -56,22 +59,38 @@ def user(username, role, password):
 
 def seed_demo_data():
 
-    # ---------------------------------------------------------
-    # Demo users
-    # ---------------------------------------------------------
+    # =========================================================
+    # DEMO USERS
+    # =========================================================
 
-    hod = user("hod", "hod", "hod123")
+    hod = user(
+        "hod",
+        "hod",
+        "hod123"
+    )
 
-    f1 = user("faculty1", "faculty", "faculty123")
-    f2 = user("faculty2", "faculty", "faculty123")
+    f1 = user(
+        "faculty1",
+        "faculty",
+        "faculty123"
+    )
 
-    # ---------------------------------------------------------
-    # Faculty
-    # ---------------------------------------------------------
+    f2 = user(
+        "faculty2",
+        "faculty",
+        "faculty123"
+    )
 
-    faculty1 = Faculty.find_one({"faculty_code": "FAC001"})
+    # =========================================================
+    # FACULTY
+    # =========================================================
+
+    faculty1 = Faculty.find_one({
+        "faculty_code": "FAC001"
+    })
 
     if not faculty1:
+
         faculty1 = new(
             Faculty,
             user_id=f1.id,
@@ -80,14 +99,17 @@ def seed_demo_data():
             email="faculty1@college.edu",
             department="Computer Engineering",
             designation="Assistant Professor",
-            status="Active",
+            status="Active"
         )
 
         faculty1.save()
 
-    faculty2 = Faculty.find_one({"faculty_code": "FAC002"})
+    faculty2 = Faculty.find_one({
+        "faculty_code": "FAC002"
+    })
 
     if not faculty2:
+
         faculty2 = new(
             Faculty,
             user_id=f2.id,
@@ -96,25 +118,26 @@ def seed_demo_data():
             email="faculty2@college.edu",
             department="Computer Engineering",
             designation="Assistant Professor",
-            status="Active",
+            status="Active"
         )
 
         faculty2.save()
 
-    # ---------------------------------------------------------
-    # Student
-    # ---------------------------------------------------------
+    # =========================================================
+    # STUDENT
+    # =========================================================
 
     stu_user = user(
         "250183107002",
         "student",
-        "student123",
+        "student123"
     )
 
-    if not Student.find_one(
-        {"enrollment_no": "250183107002"}
-    ):
-        new(
+    if not Student.find_one({
+        "enrollment_no": "250183107002"
+    }):
+
+        student = new(
             Student,
             user_id=stu_user.id,
             enrollment_no="250183107002",
@@ -123,58 +146,64 @@ def seed_demo_data():
             department="Computer Engineering",
             academic_year="2026-27",
             email="om@college.edu",
-            status="Active",
-        ).save()
+            status="Active"
+        )
 
-    # ---------------------------------------------------------
-    # Subjects
-    # ---------------------------------------------------------
+        student.save()
+
+    # =========================================================
+    # SUBJECTS
+    # =========================================================
 
     defaults = [
+
         (
             "Python Programming",
             "BE05000231",
             5,
-            faculty1.id,
+            faculty1.id
         ),
+
         (
             "DBMS",
             "BE05000241",
             5,
-            faculty1.id,
+            faculty1.id
         ),
+
         (
             "Web Application Development",
             "BE05000281",
             5,
-            faculty2.id,
+            faculty2.id
         ),
+
         (
             "System Software",
             "BE05000261",
             5,
-            faculty2.id,
+            faculty2.id
         ),
+
         (
             "Computer Networks",
             "BE05000251",
             5,
-            faculty2.id,
-        ),
+            faculty2.id
+        )
     ]
 
     for name, code, sem, fid in defaults:
 
-        s = Subject.find_one(
-            {
-                "subject_code": code,
-                "semester": sem,
-                "academic_year": "2026-27",
-            }
-        )
+        subject = Subject.find_one({
+            "subject_code": code,
+            "semester": sem,
+            "academic_year": "2026-27"
+        })
 
-        if not s:
-            new(
+        if not subject:
+
+            subject = new(
                 Subject,
                 subject_name=name,
                 subject_code=code,
@@ -184,81 +213,101 @@ def seed_demo_data():
                 department="Computer Engineering",
                 subject_type="Theory",
                 credits=3,
-                status="Active",
-            ).save()
+                status="Active"
+            )
 
-    # ---------------------------------------------------------
-    # Feedback Questions
-    # ---------------------------------------------------------
+            subject.save()
 
-    for i, (text, cat) in enumerate(
+    # =========================================================
+    # FEEDBACK QUESTIONS
+    # =========================================================
+
+    for i, (text, category) in enumerate(
         DEFAULT_QUESTIONS,
-        1,
+        1
     ):
 
-        if not FeedbackQuestion.find_one(
-            {"question_text": text}
-        ):
+        question = FeedbackQuestion.find_one({
+            "question_text": text
+        })
 
-            new(
+        if not question:
+
+            question = new(
                 FeedbackQuestion,
                 question_text=text,
-                category=cat,
+                category=category,
                 question_order=i,
                 status="Active",
-                is_comment=(cat == "Comments"),
-            ).save()
+                is_comment=(category == "Comments")
+            )
 
-    # ---------------------------------------------------------
-    # Feedback Forms
-    # ---------------------------------------------------------
+            question.save()
 
-    for s in Subject.all({"status": "Active"}):
+    # =========================================================
+    # FEEDBACK FORMS
+    # =========================================================
 
-        if not FeedbackForm.find_one(
-            {
-                "subject_id": s.id,
-                "academic_year": "2026-27",
-            }
-        ):
+    for subject in Subject.all({
+        "status": "Active"
+    }):
 
-            new(
+        existing_form = FeedbackForm.find_one({
+            "subject_id": subject.id,
+            "academic_year": "2026-27"
+        })
+
+        if not existing_form:
+
+            form = new(
                 FeedbackForm,
-                subject_id=s.id,
+                subject_id=subject.id,
                 academic_year="2026-27",
 
-                # FIX:
-                # MongoDB/PyMongo requires datetime,
-                # not datetime.date
-                start_date=datetime(2026, 1, 1),
-                end_date=datetime(2026, 12, 31),
+                # MongoDB requires datetime objects.
+                # Do NOT use datetime.date objects here.
+                start_date=datetime(
+                    2026,
+                    1,
+                    1
+                ),
 
-                status="Active",
-            ).save()
+                end_date=datetime(
+                    2026,
+                    12,
+                    31
+                ),
 
-    # ---------------------------------------------------------
-    # Seed a few anonymous responses only once
-    # ---------------------------------------------------------
+                status="Active"
+            )
+
+            form.save()
+
+    # =========================================================
+    # ANONYMOUS DEMO RESPONSES
+    # =========================================================
 
     if FeedbackResponse.count() == 0:
 
-        qs = FeedbackQuestion.all(
+        questions = FeedbackQuestion.all(
             {
                 "status": "Active",
-                "is_comment": False,
+                "is_comment": False
             },
-            [("question_order", 1)],
+            [
+                ("question_order", 1)
+            ]
         )
 
-        forms = FeedbackForm.all(
-            {"status": "Active"}
-        )
+        forms = FeedbackForm.all({
+            "status": "Active"
+        })
 
         for form in forms[:5]:
 
             for n in range(5):
 
-                r = new(
+                response = new(
                     FeedbackResponse,
                     feedback_form_id=form.id,
                     anonymous_reference=(
@@ -270,47 +319,52 @@ def seed_demo_data():
                         9,
                         15,
                         10,
-                        n * 5,
-                    ),
+                        n * 5
+                    )
                 )
 
-                r.save()
+                response.save()
 
-                for q in qs:
+                for question in questions:
 
-                    new(
+                    answer = new(
                         FeedbackAnswer,
-                        response_id=r.id,
-                        question_id=q.id,
+                        response_id=response.id,
+                        question_id=question.id,
                         rating=random.choice(
                             [3, 4, 4, 5]
                         ),
-                        comment=None,
-                    ).save()
-
-                if n == 0:
-
-                    cq = FeedbackQuestion.find_one(
-                        {
-                            "is_comment": True,
-                            "status": "Active",
-                        }
+                        comment=None
                     )
 
-                    if cq:
+                    answer.save()
 
-                        new(
+                # Add one sample comment
+                if n == 0:
+
+                    comment_question = FeedbackQuestion.find_one({
+                        "is_comment": True,
+                        "status": "Active"
+                    })
+
+                    if comment_question:
+
+                        comment_answer = new(
                             FeedbackAnswer,
-                            response_id=r.id,
-                            question_id=cq.id,
+                            response_id=response.id,
+                            question_id=comment_question.id,
                             rating=None,
                             comment=(
                                 "More practical examples "
                                 "would be helpful."
-                            ),
-                        ).save()
+                            )
+                        )
 
-    print("MongoDB demo data is ready.")
+                        comment_answer.save()
+
+    print(
+        "MongoDB demo data is ready."
+    )
 
 
 def new_id_preview(form_id, n):
@@ -321,30 +375,35 @@ if __name__ == "__main__":
     seed_demo_data()
 ```
 
-### Now do this
+### Now on GitHub
 
-Save the file.
+After replacing the whole `seed.py`:
 
-Then in CMD:
+1. Click **Commit changes**
+2. Commit message:
 
-```cmd
-python -m compileall -q .
+```text
+Fix MongoDB seed date handling
 ```
 
-If **nothing appears**, that's good ✅
+3. Click **Commit changes**
 
-Then run:
+Then **Render should automatically start a new deployment** because your Render service is connected to the `main` branch.
 
-```cmd
-python app.py
+### One important point
+
+Your previous Render error was specifically:
+
+```text
+datetime.date(2026, 1, 1)
 ```
 
-**Don't push to GitHub yet.**
+This code now uses:
 
-Send me exactly what you get after:
-
-```cmd
-python app.py
+```python
+datetime(2026, 1, 1)
 ```
 
-Then I'll tell you the next step.
+So that particular MongoDB error is fixed.
+
+After you commit, **wait for the new Render deployment and send me the new Render log**. Don't make another change until we see what the new deployment says.
