@@ -1,423 +1,355 @@
-import secrets
-from datetime import date, datetime, timezone
-
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
-
+from flask import Blueprint, render_template, redirect, url_for, flash, abort, request
 from flask_login import current_user
 
-from decorators import role_required
-from models import (
-    FeedbackAnswer,
-    FeedbackForm,
-    FeedbackQuestion,
-    FeedbackResponse,
+from models.core import (
+    Student,
     Subject,
+    FeedbackForm,
+    FeedbackResponse,
     SubmissionTracking,
-    new,
 )
-from mongo import get_db
-from services import (
-    is_form_open,
-    student_is_eligible,
-    tracked_submission,
-)
+from auth import role_required
+from services import is_form_open
 
 
-bp = Blueprint(
-    "student",
-    __name__,
-    url_prefix="/student"
-)
+bp = Blueprint("student", __name__, url_prefix="/student")
 
 
-def student_forms(student):
+def get_current_student():
+    """Return the Student record linked to the logged-in user."""
+    student = Student.first({"user_id": current_user.id})
+
+    if not student:
+        abort(404, description="Student profile not found.")
+
+    return student
+
+
+def student_assigned_subject_ids(student):
+    """Return assigned subject IDs as integers."""
+    raw_ids = getattr(student, "subject_ids", []) or []
+
+    result = set()
+
+    for value in raw_ids:
+        try:
+            result.add(int(value))
+        except (TypeError, ValueError):
+            continue
+
+    return result
+
+
+def get_assigned_subjects(student):
     """
-    Return only the feedback forms for subjects
-    explicitly assigned to this student.
+    Get ONLY the subjects explicitly assigned to this student.
     """
+    assigned_ids = student_assigned_subject_ids(student)
 
-    forms = []
+    if not assigned_ids:
+        return []
 
-    assigned_ids = set(
-        getattr(student, "subject_ids", []) or []
-    )
+    subjects = Subject.all({
+        "status": "Active"
+    })
 
-    for f in FeedbackForm.all(
-        {"academic_year": student.academic_year},
-        [("id", 1)]
-    ):
+    result = []
 
-        s = f.subject
-
-        if not s:
+    for subject in subjects:
+        try:
+            subject_id = int(subject.id)
+        except (TypeError, ValueError):
             continue
 
-        # Student must be explicitly assigned this subject
-        if s.id not in assigned_ids:
+        if subject_id not in assigned_ids:
             continue
 
-        # Semester must match
-        if s.semester != student.semester:
+        # Extra academic validation
+        if student.semester is not None:
+            if int(subject.semester) != int(student.semester):
+                continue
+
+        if student.academic_year:
+            if str(subject.academic_year).strip() != str(student.academic_year).strip():
+                continue
+
+        if student.department:
+            student_dept = str(student.department).strip().casefold()
+            subject_dept = str(subject.department).strip().casefold()
+
+            if student_dept != subject_dept:
+                continue
+
+        result.append(subject)
+
+    return result
+
+
+def get_forms_for_student(student):
+    """
+    Return active feedback forms belonging ONLY to subjects
+    assigned to this student.
+    """
+    assigned_subjects = get_assigned_subjects(student)
+
+    if not assigned_subjects:
+        return []
+
+    assigned_ids = {int(subject.id) for subject in assigned_subjects}
+
+    forms = FeedbackForm.all({
+        "status": "Active"
+    })
+
+    result = []
+
+    for form in forms:
+        subject = form.subject
+
+        if not subject:
             continue
 
-        # Subject must be active
-        if s.status != "Active":
+        try:
+            subject_id = int(subject.id)
+        except (TypeError, ValueError):
             continue
 
-        # Department must match
-        if (
-            s.department.strip().casefold()
-            != student.department.strip().casefold()
-        ):
+        if subject_id not in assigned_ids:
             continue
 
-        forms.append(f)
+        # Academic year check
+        if form.academic_year:
+            if str(form.academic_year).strip() != str(student.academic_year).strip():
+                continue
 
-    return sorted(
-        forms,
-        key=lambda f: f.subject.subject_name
-    )
+        result.append(form)
+
+    return result
+
+
+def has_submitted(student, form):
+    """Check whether this student already submitted this feedback form."""
+    tracking = SubmissionTracking.first({
+        "student_id": student.id,
+        "feedback_form_id": form.id,
+    })
+
+    return tracking is not None
 
 
 @bp.get("/dashboard")
 @role_required("student")
 def dashboard():
+    student = get_current_student()
 
-    student = current_user.student
+    assigned_subjects = get_assigned_subjects(student)
+    forms = get_forms_for_student(student)
 
-    forms = student_forms(student)
-
-    items = []
-
-    completed = 0
-    pending = 0
+    form_data = []
 
     for form in forms:
+        form_data.append({
+            "form": form,
+            "subject": form.subject,
+            "submitted": has_submitted(student, form),
+            "open": is_form_open(form),
+        })
 
-        done = tracked_submission(
-            student.id,
-            form.id
-        )
+    submitted_count = sum(
+        1 for item in form_data
+        if item["submitted"]
+    )
 
-        open_now = (
-            is_form_open(form)
-            and student_is_eligible(student, form)
-        )
-
-        if done:
-
-            state = "Completed"
-            completed += 1
-
-        elif open_now:
-
-            state = "Pending"
-            pending += 1
-
-        else:
-
-            state = (
-                "Closed"
-                if (
-                    form.status in {"Closed", "Archived"}
-                    or (
-                        form.end_date
-                        and form.end_date < date.today()
-                    )
-                )
-                else "Unavailable"
-            )
-
-        items.append(
-            {
-                "form": form,
-                "subject": form.subject,
-                "done": done,
-                "open": open_now and not done,
-                "state": state,
-            }
-        )
-
-    total = len(items)
-
-    completion = (
-        round(completed / total * 100, 1)
-        if total
-        else 0
+    pending_count = sum(
+        1 for item in form_data
+        if not item["submitted"]
     )
 
     return render_template(
         "student/dashboard.html",
-        items=items,
         student=student,
-        completed=completed,
-        pending=pending,
-        total=total,
-        completion=completion,
+        subjects=assigned_subjects,
+        forms=form_data,
+        assigned_subjects=assigned_subjects,
+        submitted_count=submitted_count,
+        pending_count=pending_count,
+        subject_count=len(assigned_subjects),
     )
 
 
 @bp.get("/subjects")
 @role_required("student")
 def subjects():
-
-    return redirect(
-        url_for("student.dashboard")
-    )
+    return redirect(url_for("student.dashboard"))
 
 
-@bp.route(
-    "/feedback/<int:form_id>",
-    methods=["GET", "POST"]
-)
+@bp.route("/feedback/<int:form_id>", methods=["GET", "POST"])
 @role_required("student")
-def feedback_form(form_id):
-
-    student = current_user.student
+def feedback(form_id):
+    student = get_current_student()
 
     form = FeedbackForm.get(form_id)
 
     if not form:
         abort(404)
 
-    # Backend security check:
-    # student must be assigned this subject
-    if not student_is_eligible(
-        student,
-        form
-    ):
-        abort(403)
+    subject = form.subject
 
-    # Prevent duplicate submission
-    if tracked_submission(
-        student.id,
-        form.id
-    ):
+    if not subject:
+        abort(404)
 
+    # IMPORTANT:
+    # Student can submit feedback ONLY for an assigned subject.
+    assigned_ids = student_assigned_subject_ids(student)
+
+    if int(subject.id) not in assigned_ids:
+        flash(
+            "You are not assigned to this subject.",
+            "error"
+        )
+        return redirect(url_for("student.dashboard"))
+
+    # Academic validation
+    if student.semester is not None:
+        if int(subject.semester) != int(student.semester):
+            flash("This subject is not assigned to your semester.", "error")
+            return redirect(url_for("student.dashboard"))
+
+    if student.department:
+        student_dept = str(student.department).strip().casefold()
+        subject_dept = str(subject.department).strip().casefold()
+
+        if student_dept != subject_dept:
+            flash("This subject is not assigned to your department.", "error")
+            return redirect(url_for("student.dashboard"))
+
+    if has_submitted(student, form):
         flash(
             "You have already submitted feedback for this subject.",
             "info"
         )
+        return redirect(url_for("student.dashboard"))
 
-        return redirect(
-            url_for("student.dashboard")
-        )
-
-    # Check feedback form availability
     if not is_form_open(form):
-
         flash(
-            "This feedback form is not currently open.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("student.dashboard")
-        )
-
-    questions = FeedbackQuestion.all(
-        {
-            "status": "Active",
-            "is_comment": False
-        },
-        [
-            ("question_order", 1)
-        ]
-    )
-
-    comment_question = FeedbackQuestion.find_one(
-        {
-            "status": "Active",
-            "is_comment": True
-        }
-    )
-
-    if not questions:
-
-        flash(
-            "This feedback form has no active questions yet. Please contact the department.",
+            "This feedback form is currently closed.",
             "error"
         )
+        return redirect(url_for("student.dashboard"))
 
-        return redirect(
-            url_for("student.dashboard")
-        )
+    questions = form.questions
 
     if request.method == "POST":
 
         ratings = {}
-        invalid = False
 
-        for q in questions:
+        for question in questions:
+            value = request.form.get(f"question_{question.id}")
 
-            try:
-
-                r = int(
-                    request.form.get(
-                        f"rating_{q.id}",
-                        ""
-                    )
-                )
-
-                assert 1 <= r <= 5
-
-                ratings[q.id] = r
-
-            except:
-
-                invalid = True
-
-        comment = request.form.get(
-            "comment",
-            ""
-        ).strip()
-
-        if len(comment) > 2000:
-
-            invalid = True
-
-            flash(
-                "Comments must be 2,000 characters or fewer.",
-                "error"
-            )
-
-        if invalid:
-
-            if len(comment) <= 2000:
-
+            if not value:
                 flash(
-                    "Please select a rating from 1 to 5 for every question.",
+                    "Please answer all required questions.",
                     "error"
                 )
+                return render_template(
+                    "student/feedback.html",
+                    student=student,
+                    form=form,
+                    subject=subject,
+                    questions=questions,
+                )
 
-            return render_template(
-                "student/feedback_form.html",
-                form=form,
-                questions=questions,
-                comment_question=comment_question,
-                submitted=request.form,
-            ), 400
+            try:
+                rating = int(value)
+            except ValueError:
+                flash(
+                    "Invalid rating.",
+                    "error"
+                )
+                return render_template(
+                    "student/feedback.html",
+                    student=student,
+                    form=form,
+                    subject=subject,
+                    questions=questions,
+                )
 
-        now = datetime.now(
-            timezone.utc
-        ).replace(
-            tzinfo=None
-        )
+            if rating < 1 or rating > 5:
+                flash(
+                    "Rating must be between 1 and 5.",
+                    "error"
+                )
+                return render_template(
+                    "student/feedback.html",
+                    student=student,
+                    form=form,
+                    subject=subject,
+                    questions=questions,
+                )
 
-        rounded = now.replace(
-            minute=(now.minute // 15) * 15,
-            second=0,
-            microsecond=0
-        )
+            ratings[question.id] = rating
 
-        # Create anonymous feedback response
-        response = new(
-            FeedbackResponse,
+        comment = request.form.get("comment", "").strip()
+
+        # ---------------------------------------------------------
+        # ANONYMOUS RESPONSE
+        # ---------------------------------------------------------
+        response = FeedbackResponse(
             feedback_form_id=form.id,
-            anonymous_reference=(
-                f"TMP-{secrets.token_hex(10).upper()}"
-            ),
-            submitted_at=rounded
+            anonymous_reference=FeedbackResponse.generate_anonymous_reference(),
         )
-
         response.save()
 
-        response.anonymous_reference = (
-            f"FB-{form.academic_year.split('-')[0]}"
-            f"-{response.id:05d}"
+        for question in questions:
+            answer = response.add_answer(
+                question_id=question.id,
+                rating=ratings[question.id],
+                comment=comment if question.id == questions[-1].id else "",
+            )
+
+        # ---------------------------------------------------------
+        # STUDENT TRACKING
+        # ---------------------------------------------------------
+        tracking = SubmissionTracking(
+            student_id=student.id,
+            feedback_form_id=form.id,
         )
+        tracking.save()
 
-        response.save()
-
-        # Save ratings
-        for q in questions:
-
-            new(
-                FeedbackAnswer,
-                response_id=response.id,
-                question_id=q.id,
-                rating=ratings[q.id],
-                comment=None
-            ).save()
-
-        # Save optional comment
-        if comment and comment_question:
-
-            new(
-                FeedbackAnswer,
-                response_id=response.id,
-                question_id=comment_question.id,
-                rating=None,
-                comment=comment
-            ).save()
-
-        # Submission tracking is separate from anonymous response
-        try:
-
-            new(
-                SubmissionTracking,
-                student_id=student.id,
-                feedback_form_id=form.id,
-                submitted_at=now
-            ).save()
-
-        except Exception:
-
-            get_db().feedback_responses.delete_one(
-                {
-                    "id": response.id
-                }
-            )
-
-            get_db().feedback_answers.delete_many(
-                {
-                    "response_id": response.id
-                }
-            )
-
-            flash(
-                "You have already submitted feedback for this subject.",
-                "info"
-            )
-
-            return redirect(
-                url_for("student.dashboard")
-            )
-
-        session[
-            "feedback_success_reference"
-        ] = response.anonymous_reference
+        flash(
+            "Feedback submitted successfully and anonymously.",
+            "success"
+        )
 
         return redirect(
-            url_for("student.feedback_success")
+            url_for(
+                "student.success",
+                form_id=form.id
+            )
         )
 
     return render_template(
-        "student/feedback_form.html",
+        "student/feedback.html",
+        student=student,
         form=form,
+        subject=subject,
         questions=questions,
-        comment_question=comment_question,
-        submitted={}
     )
 
 
-@bp.get("/success")
+@bp.get("/success/<int:form_id>")
 @role_required("student")
-def feedback_success():
+def success(form_id):
+    student = get_current_student()
+
+    form = FeedbackForm.get(form_id)
+
+    if not form:
+        abort(404)
 
     return render_template(
         "student/success.html",
-        reference=session.pop(
-            "feedback_success_reference",
-            None
-        )
+        student=student,
+        form=form,
+        subject=form.subject,
     )
