@@ -1455,6 +1455,12 @@ def update_form(form_id):
         url_for("hod.forms")
     )
 
+@bp.get("/analytics")
+@role_required("hod")
+def analytics():
+    return redirect(url_for("hod.dashboard"))
+
+
 @bp.get("/faculty-performance")
 @role_required("hod")
 def faculty_performance():
