@@ -7,9 +7,41 @@ from models import FeedbackAnswer, FeedbackForm, FeedbackQuestion, FeedbackRespo
 def active_questions(): return FeedbackQuestion.all({"status":"Active"}, [("question_order",1)])
 def is_form_open(form,today=None):
     today=today or date.today(); return form.status=="Active" and (not form.start_date or form.start_date<=today) and (not form.end_date or form.end_date>=today)
-def student_is_eligible(student,form):
-    subject=form.subject
-    return bool(student and student.status=="Active" and subject and subject.status=="Active" and student.semester==subject.semester and student.department.strip().casefold()==subject.department.strip().casefold() and student.academic_year==form.academic_year)
+def student_is_eligible(student, form):
+    subject = form.subject
+
+    if not student or student.status != "Active":
+        return False
+
+    if not subject or subject.status != "Active":
+        return False
+
+    # Student must be explicitly assigned this subject
+    assigned_ids = set(
+        getattr(student, "subject_ids", []) or []
+    )
+
+    if subject.id not in assigned_ids:
+        return False
+
+    # Semester must match
+    if student.semester != subject.semester:
+        return False
+
+    # Department must match
+    if (
+        student.department.strip().casefold()
+        != subject.department.strip().casefold()
+    ):
+        return False
+
+    # Academic year must match
+    if student.academic_year != form.academic_year:
+        return False
+
+    return True
+    
+
 def eligible_student_count(form):
     s=form.subject
     return Student.count({"status":"Active","semester":s.semester,"academic_year":form.academic_year,"department":s.department})
